@@ -12,7 +12,7 @@ class RedisController extends Controller
     {
         $models = Redis::get('users');
        // $models = User::all();
-       dd($models);
+    //    dd($models);
         if (!$models) {
             $models = User::all();
             Redis::set('users', $models);
