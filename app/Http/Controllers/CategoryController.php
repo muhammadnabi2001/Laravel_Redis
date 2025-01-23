@@ -11,57 +11,67 @@ class CategoryController extends Controller
 
     public function index()
     {
-        // dd(123);
         // $categories = Category::orderBy('id', 'desc')->paginate(10);
         // return view('Category.category', ['categories' => $categories]);
-        Redis::flushall();
-        $categories=Redis::get('categories');
-        if(!$categories)
-        {
-            $categories=Category::all();
-            Redis::set('categories',json_encode($categories->toArray()));
+        // Redis::flushall();
+        $categories = Redis::get('categories');
+        if (!$categories) {
+            $categories = Category::all();
+            Redis::set('categories', json_encode($categories->toArray()));
             return view('Category.category', ['categories' => $categories]);
         }
-        $categories=json_decode($categories);
-        dd($categories);
+        $categories = json_decode($categories);
+
         return view('Category.category', ['categories' => $categories]);
     }
-    
+
     public function store(Request $request)
     {
         // Validatsiya
         $validated = $request->validate([
-            'name' => 'required|string|max:255', 
+            'name' => 'required|string|max:255',
         ]);
-        $category=new Category();
-        $category->name=$request->name;
+        // dd(123);
+        $category = new Category();
+        $category->name = $request->name;
         $category->save();
-        $categoryName = $request->input('name');
+        Redis::del('categories');
+        $categories = Category::all();
+        Redis::set('categories', json_encode($categories->toArray()));
+        // $categoryName = $request->input('name');
 
-        $categoryId = Redis::incr('category_id');
+        // $categoryId = Redis::incr('category_id');
 
-        Redis::hmset('category:' . $categoryId, ['name' => $categoryName]);
+        // Redis::hmset('category:' . $categoryId, ['name' => $categoryName]);
 
-        Redis::lpush('categories_list', $categoryId);
+        // Redis::lpush('categories_list', $categoryId);
 
         return redirect()->back()->with('success', 'Category created successfully');
     }
-    
-    public function update(Request $request,Category $category)
+
+    public function update(Request $request, Category $category)
     {
-        $validated=$request->validate([
-            'name' => 'required|string|max:255', 
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
         ]);
         $category->update([
-            'name'=>$request->name
+            'name' => $request->name
         ]);
-        return redirect()->back()->with('success','Category updated successfully');
+        Redis::del('categories');
+        $categories = Category::all();
+        Redis::set('categories', json_encode($categories->toArray()));
+        return redirect()->back()->with('success', 'Category updated successfully');
     }
-    
-    public function destroy(Category $category)
+
+    public function destroy($id)
     {
-        // dd($category->name);
+        // dd($id);
+        $category = Category::where('id',$id)->first();
+        // dd($category);
         $category->delete();
-        return redirect()->back()->with('success','Category deleted successfully');
+        Redis::del('categories');
+        $categories = Category::all();
+        Redis::set('categories', json_encode($categories->toArray()));
+        return redirect()->back()->with('success', 'Category deleted successfully');
     }
 }
